@@ -1,0 +1,20 @@
+{
+  "name": "defense-validation-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype implementation of the defense-validation@1.0 capability contract with a simulated external execution plane.",
+  "scripts": {
+    "dev": "node dev.js",
+    "dev:sim": "node sim/server.js",
+    "dev:api": "node api/server.js",
+    "dev:ui": "node ui/server.js",
+    "test": "node --test api/tests/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.5"
+  }
+}

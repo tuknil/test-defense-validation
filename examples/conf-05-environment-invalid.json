@@ -1,0 +1,222 @@
+{
+  "contract_id": "defense-validation@1.0",
+  "control_candidate": {
+    "control_candidate_id": "control-candidate:CVE-2026-1234:modsecurity:7",
+    "vulnerability_id": "CVE-2026-1234",
+    "target_control_class": "waf",
+    "target_technology": "modsecurity",
+    "summary": "Precise SQL-injection signatures on the orders filter parameter and body.",
+    "translation": {
+      "translated_candidate_result_id": "control-translation-result:CVE-2026-1234:modsecurity:7",
+      "source_mitigation_candidate_id": "mitigation-candidate:CVE-2026-1234:3",
+      "translated_at": "2026-08-11T09:14:02Z"
+    },
+    "artifact": {
+      "syntax": "modsecurity-v3",
+      "rules": [
+        {
+          "rule_id": "janus-cve-2026-1234-100",
+          "target": "ANY",
+          "operator": "rx",
+          "pattern": "'\\s*or\\s*'?1'?\\s*=\\s*'?1",
+          "action": "deny",
+          "status": 403
+        },
+        {
+          "rule_id": "janus-cve-2026-1234-101",
+          "target": "ANY",
+          "operator": "rx",
+          "pattern": "union\\s+select",
+          "action": "deny",
+          "status": 403
+        },
+        {
+          "rule_id": "janus-cve-2026-1234-102",
+          "target": "ANY",
+          "operator": "rx",
+          "pattern": ";\\s*drop\\s+table",
+          "action": "deny",
+          "status": 403
+        }
+      ]
+    }
+  },
+  "attack_suite": {
+    "attack_suite_id": "attack-suite:CVE-2026-1234:direct:2",
+    "vulnerability_id": "CVE-2026-1234",
+    "source": "check-generation + source-backed test source",
+    "modality": "stateless-http",
+    "cases": [
+      {
+        "case_id": "atk-sqli-boolean",
+        "proof_strength": "direct",
+        "provenance": "source-backed root-cause test",
+        "expected_absent_behavior": "reached-vulnerable-behavior",
+        "request": {
+          "method": "GET",
+          "path": "/api/orders",
+          "query": "filter=1'%20OR%20'1'='1",
+          "body": null
+        }
+      },
+      {
+        "case_id": "atk-sqli-union",
+        "proof_strength": "direct",
+        "provenance": "source-backed root-cause test",
+        "expected_absent_behavior": "reached-vulnerable-behavior",
+        "request": {
+          "method": "GET",
+          "path": "/api/orders",
+          "query": "filter=1%20UNION%20SELECT%20password%20FROM%20users",
+          "body": null
+        }
+      },
+      {
+        "case_id": "atk-sqli-drop",
+        "proof_strength": "direct",
+        "provenance": "source-backed root-cause test",
+        "expected_absent_behavior": "reached-vulnerable-behavior",
+        "request": {
+          "method": "POST",
+          "path": "/api/orders",
+          "query": null,
+          "body": "{\"filter\":\"1; DROP TABLE users\"}"
+        }
+      }
+    ]
+  },
+  "benign_suite": {
+    "benign_suite_id": "benign-suite:payments:http-basic:14",
+    "curation": "approved suite repository, sampled from non-prod payments traffic",
+    "modality": "stateless-http",
+    "representativeness_limits": [
+      "Sampled from non-production traffic shapes only; production traffic distribution is out of scope.",
+      "No authenticated multi-step journeys included."
+    ],
+    "cases": [
+      {
+        "case_id": "ben-list-orders",
+        "expected_outcome": "permitted",
+        "request": {
+          "method": "GET",
+          "path": "/api/orders",
+          "query": "filter=status:open",
+          "body": null
+        }
+      },
+      {
+        "case_id": "ben-search-apostrophe",
+        "expected_outcome": "permitted",
+        "request": {
+          "method": "GET",
+          "path": "/api/orders",
+          "query": "filter=customer:O'Brien",
+          "body": null
+        }
+      },
+      {
+        "case_id": "ben-create-order",
+        "expected_outcome": "permitted",
+        "request": {
+          "method": "POST",
+          "path": "/api/orders",
+          "query": null,
+          "body": "{\"note\":\"union of states shipping surcharge\"}"
+        }
+      },
+      {
+        "case_id": "ben-health",
+        "expected_outcome": "permitted",
+        "request": {
+          "method": "GET",
+          "path": "/healthz",
+          "query": null,
+          "body": null
+        }
+      }
+    ]
+  },
+  "validation_context": {
+    "validation_context_id": "validation-context:payments-legacy:waf:1",
+    "label": "Payments legacy WAF (2.9.x)",
+    "control": {
+      "class": "waf",
+      "technology": "modsecurity",
+      "version": "2.9.7",
+      "configuration_fingerprint": "sha256:cfg-payments-legacy-v1"
+    },
+    "candidate_application": {
+      "adapter_id": "control-adapter-modsecurity:1",
+      "instance_id": "waf-payments-legacy",
+      "target_policy_ref": "nonprod-payments-legacy"
+    },
+    "execution": {
+      "runner_adapter_id": "runner-adapter-local-http:1"
+    },
+    "isolation": {
+      "environment": "non-prod",
+      "reset_supported": true
+    },
+    "observation": {
+      "control_decision": true,
+      "protected_target_receipt": true
+    },
+    "fidelity": {
+      "claims": [
+        "control-parity"
+      ],
+      "evidence_refs": []
+    },
+    "limitations": [
+      "Engine major version trails the approved profile."
+    ]
+  },
+  "validation_profile": {
+    "validation_profile_id": "defense-validation-profile:waf-http:1",
+    "signed_by": "janus-semantic-registry",
+    "signature": "sig:profile:waf-http:1",
+    "supported_control_classes": [
+      "waf"
+    ],
+    "supported_technologies": [
+      "modsecurity"
+    ],
+    "supported_versions": [
+      "3.0.11",
+      "3.0.12"
+    ],
+    "supported_case_modalities": [
+      "stateless-http"
+    ],
+    "supported_proof_strengths": [
+      "direct",
+      "indirect"
+    ],
+    "required_observation": [
+      "control_decision",
+      "protected_target_receipt"
+    ],
+    "required_isolation": {
+      "environment": "non-prod",
+      "reset_supported": true
+    },
+    "required_fidelity_claims": [
+      "control-parity",
+      "ruleset-parity"
+    ],
+    "requires_baseline_confirmation": true,
+    "requires_candidate_attribution": true
+  },
+  "validation_policy": {
+    "validation_policy_id": "defense-validation-policy:default:1",
+    "signed_by": "janus-semantic-registry",
+    "signature": "sig:policy:default:1",
+    "required_attack_cases": "all",
+    "required_benign_cases": "all",
+    "require_baseline_confirmation": true,
+    "require_candidate_attribution": true,
+    "max_transient_retries": 3,
+    "max_cases_per_run": 64,
+    "retention_days": 365
+  }
+}

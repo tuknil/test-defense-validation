@@ -1,0 +1,116 @@
+{
+  "note": "Editable starting points for SubmitDefenseValidationRequest@1. Not a registry: the service never resolves anything from here during a run. Each file is a complete payload and can be submitted directly.",
+  "examples": [
+    {
+      "id": "CONF-01",
+      "title": "Direct proof, candidate blocks, benign preserved",
+      "narrative": "Dev-equivalent WAF, direct root-cause attack baseline reaches the vulnerable path, the candidate blocks it, benign suite preserved.",
+      "expected": {
+        "terminal_state": "validated",
+        "proof_strength": "direct"
+      },
+      "file": "conf-01-validated.json"
+    },
+    {
+      "id": "CONF-02",
+      "title": "Indirect discriminator proof",
+      "narrative": "Discriminator-backed attack cases blocked and benign preserved; the indirect proof path is recorded as an explicit limitation.",
+      "expected": {
+        "terminal_state": "validated",
+        "proof_strength": "indirect"
+      },
+      "file": "conf-02-validated.json"
+    },
+    {
+      "id": "CONF-03",
+      "title": "Required attack still reaches the target",
+      "narrative": "An earlier candidate revision covers only one signature; the remaining required attacks reach the protected target while benign traffic is preserved.",
+      "expected": {
+        "terminal_state": "failed-to-block"
+      },
+      "file": "conf-03-failed-to-block.json"
+    },
+    {
+      "id": "CONF-04",
+      "title": "Benign regression governs over attack failure",
+      "narrative": "An over-broad candidate blocks legitimate requests. A required attack also slips through; both findings are retained and `unsafe` governs.",
+      "expected": {
+        "terminal_state": "unsafe"
+      },
+      "file": "conf-04-unsafe.json"
+    },
+    {
+      "id": "CONF-05",
+      "title": "Context engine version outside profile",
+      "narrative": "The context runs an engine major version the approved profile does not support, so no candidate judgment is made.",
+      "expected": {
+        "terminal_state": "environment-invalid"
+      },
+      "file": "conf-05-environment-invalid.json"
+    },
+    {
+      "id": "CONF-05b",
+      "title": "Context configuration drift",
+      "narrative": "The live control reports a configuration fingerprint that differs from the supplied context descriptor.",
+      "expected": {
+        "terminal_state": "environment-invalid"
+      },
+      "file": "conf-05b-environment-invalid.json"
+    },
+    {
+      "id": "CONF-06",
+      "title": "Generic rejection with no attribution",
+      "narrative": "The context declares control-decision observability but the control emits only a generic rejection, so blocking cannot be attributed to the candidate.",
+      "expected": {
+        "terminal_state": "inconclusive"
+      },
+      "file": "conf-06-inconclusive.json"
+    },
+    {
+      "id": "CONF-07",
+      "title": "Unsupported suite modality",
+      "narrative": "A stateful browser journey is submitted against a stateless-HTTP profile; the request is valid but outside configured coverage.",
+      "expected": {
+        "terminal_state": "scope-declined"
+      },
+      "file": "conf-07-scope-declined.json"
+    },
+    {
+      "id": "CONF-07b",
+      "title": "Unsupported proof path",
+      "narrative": "An indirect suite is submitted against a direct-only profile.",
+      "expected": {
+        "terminal_state": "scope-declined"
+      },
+      "file": "conf-07b-scope-declined.json"
+    },
+    {
+      "id": "CONF-08",
+      "title": "Candidate application fails, state unknown",
+      "narrative": "The rule commit times out without acknowledgement; actual control state cannot be established, so no domain result can be emitted.",
+      "expected": {
+        "terminal_state": "malfunction"
+      },
+      "file": "conf-08-malfunction.json"
+    },
+    {
+      "id": "CONF-09",
+      "title": "Same block with and without the candidate",
+      "narrative": "An unrelated legacy edge filter blocks the attack traffic in both trials with no attribution, so blocking is not candidate-attributable.",
+      "expected": {
+        "terminal_state": "inconclusive"
+      },
+      "file": "conf-09-inconclusive.json"
+    },
+    {
+      "id": "SEC-01",
+      "title": "Production context denied at the edge",
+      "narrative": "A payload naming a production control context is rejected before any run is created; this is an authorization boundary, not a domain outcome.",
+      "expected": {
+        "rejected": true,
+        "error_code": "production-context-denied"
+      },
+      "file": "sec-01-production-context-denied.json"
+    }
+  ]
+}

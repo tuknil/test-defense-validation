@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>defense-validation console</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛡️</text></svg>" />
+    <script src="/config.js"></script>
+    <script>
+      // Runs before first paint: dark unless the viewer has chosen light.
+      document.documentElement.dataset.theme = localStorage.getItem('dv.theme') === 'light' ? 'light' : 'dark';
+    </script>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">DV</div>
+          <div class="brand-text">
+            <strong>defense-validation</strong>
+            <span class="mono">defense-validation@1.0</span>
+          </div>
+        </div>
+
+        <nav class="nav" id="nav">
+          <a href="#/validate" data-route="validate"><span class="nav-ico">▸</span> Validate</a>
+          <a href="#/ledger" data-route="ledger"><span class="nav-ico">≡</span> Ledger</a>
+        </nav>
+
+        <div class="sidebar-foot">
+          <label class="field-label" for="role">Workload identity</label>
+          <select id="role" class="select"></select>
+          <div class="health" id="health"></div>
+          <button class="btn sm theme-toggle" id="theme" type="button" aria-pressed="false">
+            <span id="theme-icon">◐</span> <span id="theme-label">Light mode</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main" id="main"></main>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
