@@ -679,6 +679,52 @@ test('SEC-03: the contract rejects unknown fields and wrong contract ids', async
   assert.equal(wrongContract.status, 400);
 });
 
+test('SEC-05: context identifiers cannot steer an adapter off its route', async () => {
+  const { request } = await scenario('CONF-01');
+
+  // A traversal in instance_id would otherwise normalize away the API prefix
+  // and reach an unrelated endpoint on the control-plane host.
+  for (const [field, mutate] of [
+    ['validation_context.candidate_application.instance_id',
+      (p) => { p.validation_context.candidate_application.instance_id = 'x/../../../../admin/v1/reset'; }],
+    ['validation_context.candidate_application.target_policy_ref',
+      (p) => { p.validation_context.candidate_application.target_policy_ref = '../../../../admin/v1/reset'; }],
+    ['validation_context.execution.simulator_id',
+      (p) => { p.validation_context.execution.simulator_id = 'sim/../../etc'; }],
+  ]) {
+    const payload = structuredClone(request);
+    mutate(payload);
+    const response = await call('/v1/defense-validation-runs', { method: 'POST', body: JSON.stringify(payload) });
+    assert.equal(response.status, 400, `${field} was accepted`);
+    assert.ok(response.body.error.details.some((d) => d.field === field), `${field} not reported`);
+  }
+
+  // Encoded separators are refused too, not just literal ones.
+  const encoded = structuredClone(request);
+  encoded.validation_context.candidate_application.instance_id = 'x%2F..%2F..%2Fadmin';
+  const encodedResponse = await call('/v1/defense-validation-runs', { method: 'POST', body: JSON.stringify(encoded) });
+  assert.equal(encodedResponse.status, 400);
+});
+
+test('SEC-05b: the adapter encodes path segments even if validation is bypassed', async () => {
+  // Defence in depth: call the adapter directly with a hostile identifier the
+  // contract would have rejected, and confirm it stays on its own route.
+  const { modsecurityControlAdapter } = await import('../src/adapters/control/modsecurity.js');
+  const hostile = {
+    isolation: { environment: 'non-prod' },
+    candidate_application: { instance_id: 'x/../../../../admin/v1/reset', target_policy_ref: 'p' },
+  };
+  await assert.rejects(
+    () => modsecurityControlAdapter.describeContext(hostile),
+    (err) => err.category === 'candidate-application-failure',
+    'traversal should 404 against the encoded instance path, not reach the admin endpoint',
+  );
+
+  // The lab is still intact — nothing was reset.
+  const probe = await fetch(`${process.env.SIM_BASE_URL}/waf/v1/instances/waf-payments-dev`);
+  assert.equal(probe.status, 200);
+});
+
 test('SEC-04: case material cannot redirect the runner off the declared ingress', async () => {
   const { admitRequest } = await import('../src/adapters/runner/local_http.js');
   assert.throws(() => admitRequest({ method: 'GET', path: 'http://evil.example/steal' }));

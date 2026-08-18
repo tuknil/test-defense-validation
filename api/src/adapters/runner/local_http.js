@@ -16,7 +16,7 @@ export const localHttpRunner = {
     const request = admitRequest(testCase.request);
     let response;
     try {
-      response = await fetch(`${CONTROL_PLANE_BASE_URL}/waf/v1/instances/${instance_id}/traffic`, {
+      response = await fetch(`${CONTROL_PLANE_BASE_URL}/waf/v1/instances/${encodeURIComponent(instance_id)}/traffic`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),

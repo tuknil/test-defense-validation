@@ -28,7 +28,7 @@ npm install && npm run dev
 npm test
 ```
 
-42 tests covering all nine CFS conformance scenarios, the payload contract, the Postgres-backed
+44 tests covering all nine CFS conformance scenarios, the payload contract, the Postgres-backed
 ledger, the acceptance criteria, the security boundaries, and determinism.
 
 ---
@@ -109,6 +109,10 @@ Three things follow from having no registry, and each is enforced rather than as
   — so a verdict can never bind to material other than what ran.
 * **Unknown fields are refused, at any depth.** A payload cannot introduce semantics the contract
   does not define, so it cannot alter policy, scope, or expected outcomes (§13.4).
+* **Identifiers that reach a URL are character-constrained.** `instance_id`, `target_policy_ref`,
+  and the adapter/simulator IDs must match `^[A-Za-z0-9][A-Za-z0-9._:@-]*$`, and adapters encode
+  every path segment regardless. Without both, a traversal in `instance_id` normalizes away the API
+  prefix and steers the control adapter to an arbitrary endpoint on the control-plane host.
 * **Adapters and limits come from deployment config, not the payload.** The context may only name an
   admitted control/runner adapter, and service caps on rules, cases, and pattern length hold no
   matter what the supplied policy claims.

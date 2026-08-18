@@ -44,6 +44,14 @@ export const ERROR_CATEGORIES = [
 ];
 
 const str = (extra = {}) => ({ type: 'string', ...extra });
+
+/**
+ * Identifiers that end up in an adapter's URL path. Constrained to a safe
+ * character set so a payload cannot steer an adapter off its route — no
+ * slashes, no dot-segments, nothing percent-encodable into either (§13.4).
+ */
+const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:@-]*$/;
+const routeId = (extra = {}) => ({ type: 'string', pattern: ID_PATTERN, maxLength: 200, ...extra });
 const bool = (extra = {}) => ({ type: 'boolean', ...extra });
 const num = (extra = {}) => ({ type: 'number', ...extra });
 const strList = (extra = {}) => ({ array: str(), ...extra });
@@ -149,16 +157,16 @@ const REQUEST_SPEC = {
         },
         candidate_application: {
           object: {
-            adapter_id: str(),
-            instance_id: str(),
-            target_policy_ref: str(),
+            adapter_id: routeId(),
+            instance_id: routeId(),
+            target_policy_ref: routeId(),
           },
         },
         execution: {
           object: {
-            runner_adapter_id: str(),
-            simulator_id: str({ optional: true }),
-            scenario_prefix: str({ optional: true }),
+            runner_adapter_id: routeId(),
+            simulator_id: routeId({ optional: true }),
+            scenario_prefix: routeId({ optional: true }),
           },
         },
         isolation: { object: { environment: str(), reset_supported: bool() } },
@@ -244,6 +252,8 @@ function check(value, spec, path, errors) {
       errors.push({ field: label, message: 'must be a non-empty string' });
     } else if (value.length > (spec.maxLength ?? LIMITS.maxStringLength)) {
       errors.push({ field: label, message: `must be at most ${spec.maxLength ?? LIMITS.maxStringLength} characters` });
+    } else if (spec.pattern && !spec.pattern.test(value)) {
+      errors.push({ field: label, message: 'must contain only letters, digits, and . _ : @ - (no path separators)' });
     }
     return;
   }

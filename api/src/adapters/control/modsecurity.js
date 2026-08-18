@@ -18,6 +18,14 @@ class AdapterError extends Error {
   }
 }
 
+/**
+ * Path segments are always encoded, never interpolated raw. The contract
+ * already constrains these identifiers, but encoding here means the adapter
+ * cannot be steered off its route even if a future field slips through
+ * unvalidated (§13.4, §13.5).
+ */
+const seg = (value) => encodeURIComponent(String(value));
+
 async function call(path, init = {}) {
   let response;
   try {
@@ -45,7 +53,7 @@ export const modsecurityControlAdapter = {
   /** Probe live control state for the context evaluator. */
   async describeContext(context) {
     const { instance_id } = context.candidate_application;
-    const { ok, body } = await call(`/waf/v1/instances/${instance_id}`);
+    const { ok, body } = await call(`/waf/v1/instances/${seg(instance_id)}`);
     if (!ok) throw new AdapterError('candidate-application-failure', body?.error?.message ?? 'control instance could not be described');
     return body;
   },
@@ -54,7 +62,7 @@ export const modsecurityControlAdapter = {
   async establishBaseline(context) {
     assertNonProd(context);
     const { instance_id, target_policy_ref } = context.candidate_application;
-    const { ok, body } = await call(`/waf/v1/instances/${instance_id}/policies/${target_policy_ref}`);
+    const { ok, body } = await call(`/waf/v1/instances/${seg(instance_id)}/policies/${seg(target_policy_ref)}`);
     if (!ok) throw new AdapterError('candidate-application-failure', body?.error?.message ?? 'baseline control state could not be read', { stateKnown: false });
     return {
       state: body.candidate_absent ? 'candidate-absent' : 'candidate-present',
@@ -70,7 +78,7 @@ export const modsecurityControlAdapter = {
   async apply(context, candidate) {
     assertNonProd(context);
     const { instance_id, target_policy_ref } = context.candidate_application;
-    const { ok, status, body } = await call(`/waf/v1/instances/${instance_id}/policies/${target_policy_ref}/rules`, {
+    const { ok, status, body } = await call(`/waf/v1/instances/${seg(instance_id)}/policies/${seg(target_policy_ref)}/rules`, {
       method: 'POST',
       body: JSON.stringify({
         candidate_id: candidate.control_candidate_id,
@@ -102,7 +110,7 @@ export const modsecurityControlAdapter = {
   /** VerifyApplied: prove the exact expected digest is what is live. */
   async verifyApplied(context, application, expectedDigest) {
     const { instance_id, target_policy_ref } = context.candidate_application;
-    const { ok, body } = await call(`/waf/v1/instances/${instance_id}/policies/${target_policy_ref}`);
+    const { ok, body } = await call(`/waf/v1/instances/${seg(instance_id)}/policies/${seg(target_policy_ref)}`);
     if (!ok) throw new AdapterError('candidate-application-failure', 'applied control state could not be verified', { stateKnown: false });
     const digestActive = body.active_candidate_digests.includes(expectedDigest);
     const applicationActive = body.active_application_ids.includes(application.application_id);
@@ -120,7 +128,7 @@ export const modsecurityControlAdapter = {
   /** RemoveOrReset, always attempted, always evidenced. */
   async removeOrReset(context, application) {
     const { instance_id } = context.candidate_application;
-    const { ok, body } = await call(`/waf/v1/instances/${instance_id}/applications/${application.application_id}`, { method: 'DELETE' });
+    const { ok, body } = await call(`/waf/v1/instances/${seg(instance_id)}/applications/${seg(application.application_id)}`, { method: 'DELETE' });
     if (!ok) {
       return { removed: false, error: body?.error?.message ?? 'candidate removal failed', raw: body };
     }
